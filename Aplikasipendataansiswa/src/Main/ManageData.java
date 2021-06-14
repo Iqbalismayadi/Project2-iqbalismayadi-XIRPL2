@@ -7,6 +7,7 @@ package Main;
 
 import Classes.DatabaseConnection;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import javax.swing.JOptionPane;
@@ -21,14 +22,20 @@ public class ManageData extends javax.swing.JDialog {
      * Creates new form ManageData
      */
     Connection koneksi;
-    
-    public ManageData(java.awt.Frame parent, boolean modal) {
+    String action;
+    public ManageData(java.awt.Frame parent, boolean modal, String act, String nis) {
         super(parent, modal);
         initComponents();
         koneksi = DatabaseConnection.getKoneksi("localhost", "3306", "root", "", "db_sekolah");
+        
+        action = act;
+         if (action.equals("Edit")){
+            txtNIS.setEnabled(false);
+            showData(nis);
+        }
     }
     
-     public void SimpanData(){
+    public void SimpanData(){
     String nis      = txtNIS.getText();
     String nama     = txtNama.getText();
     String kelas    = cmbKelas.getSelectedItem().toString();
@@ -48,6 +55,47 @@ public class ManageData extends javax.swing.JDialog {
     }catch(SQLException ex){
             ex.printStackTrace();
             JOptionPane.showMessageDialog(null, "Terjadi Kesalahan pada Database");
+        }
+    }
+    
+    public void showData(String nis){
+        try{
+            Statement stmt = koneksi.createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
+            String query = "SELECT * FROM t_siswa WHERE nis = '" + nis + "'";
+            System.out.println(query);
+            ResultSet rs = stmt.executeQuery(query);
+            rs.first();
+            System.out.println(rs.first());
+            txtNIS.setText(rs.getString("nis"));
+            txtNama.setText(rs.getString("nama"));
+            cmbKelas.setSelectedItem(rs.getString("kelas"));
+            cmbJurusan.setSelectedItem(rs.getString("jurusan"));
+        } catch(SQLException ex){
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(null, "Terjadi Kesalahan di Query");
+        }
+    }
+    
+    public void  EditData(){
+        String nis = txtNIS.getText();
+        String nama = txtNama.getText();
+        String kelas = cmbKelas.getSelectedItem().toString();
+        String jurusan = cmbJurusan.getSelectedItem().toString();
+        
+        try{
+            Statement stmt = koneksi.createStatement();
+            String query = "UPDATE t_siswa SET nama = '" + nama + "', "
+                    + "kelas = '" + kelas + "', "
+                    + "jurusan = '" + jurusan + "' WHERE nis = '" + nis + "'";
+            System.out.println(query);
+            int berhasil = stmt.executeUpdate(query);
+            if(berhasil == 1){
+                JOptionPane.showMessageDialog(null, "Data Berhasil Diubah");
+            } else{
+                JOptionPane.showMessageDialog(null, "Data Gagal Diubah");
+            }
+        } catch(SQLException ex){
+            ex.printStackTrace();;
         }
     }
 
@@ -194,19 +242,6 @@ public class ManageData extends javax.swing.JDialog {
         }
         //</editor-fold>
 
-        /* Create and display the dialog */
-        java.awt.EventQueue.invokeLater(new Runnable() {
-            public void run() {
-                ManageData dialog = new ManageData(new javax.swing.JFrame(), true);
-                dialog.addWindowListener(new java.awt.event.WindowAdapter() {
-                    @Override
-                    public void windowClosing(java.awt.event.WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
-                dialog.setVisible(true);
-            }
-        });
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
